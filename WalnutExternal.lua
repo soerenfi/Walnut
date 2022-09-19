@@ -1,39 +1,48 @@
 -- WalnutExternal.lua
 
 VULKAN_SDK = os.getenv("VULKAN_SDK")
+premake.warn(tostring(VULKAN_SDK))
 
 IncludeDir = {}
-IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/include"
 IncludeDir["glm"] = "../vendor/glm"
 
 LibraryDir = {}
-LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
+LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/lib"
 
 Library = {}
-Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 
+if os.ishost("linux") and os.istarget("linux") then
+   Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/libvulkan.so.1"
+else
+   Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
+end 
 
-function linux_dpkg_check_if_package_is_installed(package)
-   if os.isfile("/usr/bin/dpkg-query") then -- It's Debian or a derivative of it:
-      local result, errorCode = os.outputof("/usr/bin/dpkg-query -Wf'${Status}' " .. package)
-      if errorCode ~= 0 or result ~= "install ok installed" then
-         premake.error("Install " .. package .. " using: sudo apt-get install " .. package)
-      end
-      premake.info(package .. " is installed")
-   else -- Not a Debian-based Linux distro, for now just give a hint:
-      premake.warn("Info: Please be sure that a package like " .. package .. " is installed")
-    end
+function linux_check_if_package_is_installed(cmd, package)
+   local result, errorCode = os.outputof(cmd .. " " .. package)
+   if errorCode ~= 0 then
+      premake.error("Install " .. package .. " using package manager")
+   end
+   premake.info(package .. " is installed")
 end
-
 
 group "Dependencies"
    include "vendor/imgui"
-   -- When build host and build target are Linux, see if we can check for needed libs:
    if os.ishost("linux") and os.istarget("linux") then
-      linux_dpkg_check_if_package_is_installed("libglfw3-dev")
-      linux_dpkg_check_if_package_is_installed("libvulkan-dev")
-      linux_dpkg_check_if_package_is_installed("mesa-vulkan-drivers")
-      linux_dpkg_check_if_package_is_installed("vulkan-tools")
+
+      if os.isfile("/usr/bin/dpkg-query") then 
+         local cmd = "/usr/bin/dpkg-query -Wf"
+         linux_check_if_package_is_installed(cmd, "libglfw3-dev")
+         linux_check_if_package_is_installed(cmd, "libvulkan-dev")
+         linux_check_if_package_is_installed(cmd, "mesa-vulkan-drivers")
+         linux_check_if_package_is_installed(cmd, "vulkan-tools")
+      elseif os.isfile("/usr/bin/rpm") then 
+         local cmd = "/usr/bin/rpm -qi"
+         linux_check_if_package_is_installed(cmd, "glfw-devel")
+      else
+         premake.warn("Info: Please be sure that GLFW and Vulkan SDK are installed")
+      end 
+
       vulkaninfo_dir = os.pathsearch("vulkaninfo", os.getenv("PATH"))
       if not vulkaninfo_dir then
          premake.warn("vulkaninfo not found. Be sure that Vulkan works.")
