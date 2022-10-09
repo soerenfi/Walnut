@@ -16,8 +16,8 @@ namespace Walnut {
 	class Image
 	{
 	public:
-		Image(std::string_view path);
-		Image(uint32_t width, uint32_t height, ImageFormat format, const void* data = nullptr);
+    Image(std::string& path);
+    Image(uint32_t width, uint32_t height, ImageFormat format, const void* data = nullptr);
 		~Image();
 
 		void SetData(const void* data);

@@ -1,0 +1,16 @@
+
+
+cc_library(
+    name = "Walnut",
+    strip_include_prefix="Walnut/src",
+    hdrs = glob(["Walnut/src/Walnut/**",
+                "Walnut/src/ImGui/*.embed",
+                "Walnut/src/Walnut/Input/*.h",
+                "Walnut/vendor/stb_image/*.h"]),
+    srcs = glob(["Walnut/src/Walnut/*cpp"]),
+    visibility = ["//visibility:public"],
+    deps=[
+        "@imgui//:imgui",
+    ]
+)
+
